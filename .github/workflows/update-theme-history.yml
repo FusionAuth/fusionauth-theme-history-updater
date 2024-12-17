@@ -27,7 +27,7 @@ jobs:
     permissions:
       actions: write
     steps:
-      - uses: liskin/gh-workflow-keepalive@v1
+      - uses: liskin/gh-workflow-keepalive@v1.2.1
 
 
   check_theme_history:
