@@ -85,10 +85,33 @@ jobs:
           FUSIONAUTH_VERSION: ${{needs.check_theme_history.outputs.latestreleasedversion}}
           FUSIONAUTH_APP_KICKSTART_FILENAME: ks.json
           FUSIONAUTH_APP_KICKSTART_DIRECTORY_PATH: ks
-      - name: Wait for FusionAuth to be up
+      - name: Wait for FusionAuth to be ready
         run: |
-          sleep 45
-          curl -vv http://localhost:9011/api/status -H 'Authorization: 4737ea8520bd454caabb7cb3d36e14bc1832c0d3f70a4189b82598670f11b1bdEXAMPLE' 
+          set -euo pipefail
+
+          theme_id="75a068fd-e94b-451a-9aeb-3ddb9a3b5987"
+          api_key="4737ea8520bd454caabb7cb3d36e14bc1832c0d3f70a4189b82598670f11b1bdEXAMPLE"
+          url="http://localhost:9011/api/theme/${theme_id}"
+
+          for i in {1..30}; do
+            status_code=$(curl --silent --show-error \
+              --output /tmp/theme-response.json \
+              --write-out "%{http_code}" \
+              --header "Authorization: ${api_key}" \
+              "$url" || true)
+
+            if [ "$status_code" = "200" ]; then
+              echo "FusionAuth is ready and the default theme is accessible."
+              exit 0
+            fi
+
+            echo "Attempt $i/30: theme API returned HTTP $status_code"
+            cat /tmp/theme-response.json || true
+            sleep 2
+          done
+
+          echo "FusionAuth never became ready enough to serve the default theme."
+          exit 1
         shell: bash
 
       - name: Download then upload theme
